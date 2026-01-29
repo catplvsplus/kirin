@@ -1,0 +1,21 @@
+{
+  "name": "kirin",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "reciple build",
+    "start": "reciple start",
+    "dev": "nodemon"
+  },
+  "dependencies": {
+    "@reciple/core": "^10.0.1",
+    "@reciple/jsx": "^10.0.1",
+    "discord.js": "^14.25.1",
+    "reciple": "^10.0.19"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "nodemon": "^3.1.11",
+    "typescript": "^5.9.3"
+  }
+}
