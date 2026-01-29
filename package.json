@@ -10,6 +10,7 @@
   "dependencies": {
     "@reciple/core": "^10.0.1",
     "@reciple/jsx": "^10.0.1",
+    "@reciple/modules": "^10.0.20",
     "discord.js": "^14.25.1",
     "reciple": "^10.0.19"
   },

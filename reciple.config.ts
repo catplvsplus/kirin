@@ -1,5 +1,4 @@
-import { Client, CommandType, CooldownAdapter, CooldownCommandPrecondition, MessageCommandFlagValidatePrecondition, MessageCommandOptionValidatePrecondition, type BuildConfig, type Config } from 'reciple';
-import type { ShardingConfig } from '../../src/index.js';
+import { Client, CommandType, CooldownAdapter, CooldownCommandPrecondition, MessageCommandFlagValidatePrecondition, MessageCommandOptionValidatePrecondition, type BuildConfig, type Config, type ShardingConfig } from 'reciple';
 
 export const client = new Client({
     token: process.env.TOKEN,
