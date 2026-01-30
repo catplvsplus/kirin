@@ -24,14 +24,6 @@ export class ServerManager {
         }
     }
 
-    public async createServer(data: Server.Data): Promise<void> {
-        const server = new Server(data, this);
-
-        this.servers.set(data.id, server);
-
-        await this.writeConfig(this.servers.map(s => s.toJSON()));
-    }
-
     public async readConfig(): Promise<Server.Data[]> {
         const exists = await stat(this.root)
             .then(d => d.isDirectory())
