@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "type": "module",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown --config-loader unrun"
+  },
+  "dependencies": {
+    "@discordjs/collection": "^2.1.1",
+    "args-tokenizer": "^0.3.0",
+    "tinyexec": "^1.0.2"
+  },
+  "devDependencies": {
+    "@reciple/utils": "^10.0.1",
+    "@types/node": "^25.1.0",
+    "tsdown": "^0.20.1",
+    "typescript": "^5.9.3"
+  }
+}

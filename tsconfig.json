@@ -1,0 +1,9 @@
+{
+    "include": ["./src/**/*.ts"],
+    "exclude": ["tsdown.config.ts"],
+    "extends": "@reciple/utils/tsconfig.json",
+    "compilerOptions": {
+        "rootDir": "./src",
+        "outDir": "./dist"
+    }
+}
