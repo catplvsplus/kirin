@@ -9,21 +9,28 @@ export class DownloadManager {
 
     constructor(public servers: ServerManager) {}
 
-    public async download(url: string, location: string): Promise<void> {
+    public async download(url: string, location: string, throwIfExists: boolean = false): Promise<void> {
         const response = await fetch(url);
         if (!response.ok) throw Error('Failed to download file', { cause: response });
 
-        const stats = await stat(location).catch(() => null);
-        const directory = path.dirname(location);
-        const filename = path.basename(location);
+        let stats = await stat(location).catch(() => null);
+
+        const directory = stats?.isDirectory()
+            ? location
+            : path.dirname(location);
+        const filename = stats?.isFile()
+            ? path.basename(location)
+            : path.basename(new URL(url).pathname);
 
         if (!stats) {
             await mkdir(directory, { recursive: true });
         } else {
+            if (!throwIfExists) return;
+
             throw new Error(`File already exists at ${location}`)
         }
 
-        const writeStream = createWriteStream(location);
+        const writeStream = createWriteStream(path.join(directory, filename));
 
         for await (const chunk of response.body!) {
             writeStream.write(chunk);

@@ -33,6 +33,16 @@ export class PaperDownloader {
         this.builds.set(version, data);
         return data;
     }
+
+    public async fetchLatestBuild(): Promise<PaperDownloader.BuildResponseData|null> {
+        const release = (await this.fetchVersions()).first()?.at(0);
+        if (!release) return null;
+
+        const build = (await this.fetchBuilds(release)).at(0);
+        if (!build) return null;
+
+        return build;
+    }
 }
 
 export namespace PaperDownloader {
