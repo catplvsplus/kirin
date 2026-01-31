@@ -77,23 +77,14 @@ export namespace Ping {
             closeTimeout: options.timeout
         }).catch(() => null);
 
-        let data: PingData = {
-            status: 'offline',
-            type: 'java',
-            address: `${options.host}${options.port ? `:${options.port}` : ''}`,
-            players: null,
-            motd: null,
-            version: null,
-            protocol: null,
-            latency: Date.now() - pinged,
-            createdAt: Date.now()
-        };
+        const data: PingData = createOfflineData(options, 'java');
 
         if (!response) {
             return data;
         } else if (!('players' in response)) {
             data.version = response.version;
             data.protocol = response.protocol;
+            data.latency = Date.now() - pinged;
             data.motd = response.motd;
             data.players = {
                 max: response.maxPlayers,
@@ -129,17 +120,7 @@ export namespace Ping {
             port: options.port ?? 19132
         }).catch(() => null);
 
-        let data: PingData = {
-            status: 'offline',
-            type: 'bedrock',
-            address: `${options.host}:${options.port ?? 19132}`,
-            players: null,
-            motd: null,
-            version: null,
-            protocol: null,
-            latency: Date.now() - pinged,
-            createdAt: Date.now()
-        };
+        const data: PingData = createOfflineData(options, 'bedrock');
 
         if (!response) return data;
 
@@ -152,8 +133,23 @@ export namespace Ping {
         data.motd = response.motd || null;
         data.version = response.version;
         data.protocol = response.protocol;
+        data.latency = Date.now() - pinged;
         data.status = response.playersMax ? 'online' : 'offline';
 
         return data;
+    }
+
+    export function createOfflineData(options: PingOptions, type: Server.Type): PingData {
+        return {
+            status: 'offline',
+            type: type,
+            address: `${options.host}${options.port ? `:${options.port}` : type == 'bedrock' ? ':19132' : ''}`,
+            players: null,
+            motd: null,
+            version: null,
+            protocol: null,
+            latency: 0,
+            createdAt: Date.now()
+        };
     }
 }

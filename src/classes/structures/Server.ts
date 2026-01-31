@@ -110,6 +110,14 @@ export class Server extends EventEmitter<Server.Events> {
         const onStop = (reason?: Error) => {
             this.process = null;
             this.stopping = false;
+            this.ping.latest = Ping.createOfflineData(
+                {
+                    host: this.hostname,
+                    port: this.port
+                },
+                this.type
+            );
+
             this.emit('processStop', this.process!, reason);
             this.emit('statusUpdate', this.status);
         };
