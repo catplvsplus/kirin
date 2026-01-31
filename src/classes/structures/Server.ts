@@ -9,6 +9,7 @@ import { Ping } from './Ping.js';
 export class Server extends EventEmitter<Server.Events> {
     public process: Result|null = null;
     public ping: Ping = new Ping(this);
+    public stopping: boolean = false;
 
     public id: string;
     public name: string;
@@ -16,7 +17,7 @@ export class Server extends EventEmitter<Server.Events> {
     public command: string;
     public persist: boolean;
     public env: Record<string, string>|string;
-    public protocol: Server.Protocol;
+    public type: Server.Type;
     public address: string;
     public pingInterval: number;
 
@@ -45,6 +46,22 @@ export class Server extends EventEmitter<Server.Events> {
         return this.process?.process?.stdin ?? null;
     }
 
+    get status(): Server.Status {
+        if (this.isRunning && !this.stopping) {
+            if (this.ping.latest?.status == 'online') return 'online';
+            if (this.ping.latest?.status == 'offline') return 'starting';
+        }
+
+        if (this.isRunning && this.stopping) return 'stopping';
+
+        if (!this.isRunning) {
+            if (this.ping.latest?.status == 'offline') return 'offline';
+            if (this.ping.latest?.status == 'online') return 'detached';
+        }
+
+        return 'offline';
+    }
+
     constructor(data: Server.Data, public servers: ServerManager) {
         super();
 
@@ -55,7 +72,7 @@ export class Server extends EventEmitter<Server.Events> {
         this.persist = data.persist;
         this.env = data.env;
 
-        this.protocol = data.protocol;
+        this.type = data.type;
         this.address = data.address;
         this.pingInterval = data.pingInterval;
     }
@@ -82,7 +99,7 @@ export class Server extends EventEmitter<Server.Events> {
 
         this.process.process?.on('spawn', () => {
             this.emit('processStart', this.process!);
-            this.ping.start(this.pingInterval);
+            this.ping.start(this.pingInterval ?? 60000);
         });
 
         const onStop = (reason?: Error) => {
@@ -97,13 +114,21 @@ export class Server extends EventEmitter<Server.Events> {
     public async stop(): Promise<number|null> {
         if (!this.isRunning) return null;
 
+        this.stopping = true;
+
         const process = this.process;
 
         process?.kill();
 
         return new Promise((resolve, reject) => this.process?.then(
-            () => resolve(process?.exitCode ?? null),
-            reject
+            () => {
+                this.stopping = false;
+                resolve(process?.exitCode ?? null);
+            },
+            (reason) => {
+                this.stopping = false;
+                reject(reason);
+            }
         ));
     }
 
@@ -121,7 +146,7 @@ export class Server extends EventEmitter<Server.Events> {
             directory: this.directory,
             command: this.command,
             persist: this.persist,
-            protocol: this.protocol,
+            type: this.type,
             env: this.env,
             address: this.address,
             pingInterval: this.pingInterval
@@ -130,6 +155,8 @@ export class Server extends EventEmitter<Server.Events> {
 }
 
 export namespace Server {
+    export type Status = 'online'|'offline'|'starting'|'stopping'|'detached';
+
     export interface Events {
         processStart: [process: Result];
         processStop: [process: Result, reason?: Error];
@@ -145,10 +172,10 @@ export namespace Server {
         command: string;
         persist: boolean;
         env: Record<string, string>|string;
-        protocol: Server.Protocol;
+        type: Server.Type;
         address: string;
         pingInterval: number;
     }
 
-    export type Protocol = 'java'|'bedrock';
+    export type Type = 'java'|'bedrock';
 }

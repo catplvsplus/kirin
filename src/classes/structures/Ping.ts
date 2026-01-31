@@ -10,7 +10,7 @@ export class Ping {
     constructor(public server: Server) {}
 
     public async ping(): Promise<Ping.PingData> {
-        const data = this.server.protocol === 'java'
+        const data = this.server.type === 'java'
             ? await Ping.pingJava({
                 host: this.server.hostname,
                 port: this.server.port,
@@ -43,7 +43,7 @@ export namespace Ping {
 
     export interface PingData {
         status: Status;
-        protocol: Server.Protocol;
+        type: Server.Type;
         address: string;
         players: {
             max: number;
@@ -52,7 +52,7 @@ export namespace Ping {
         }|null;
         motd: string|null;
         version: string|null;
-        versionProtocol: number|null;
+        protocol: number|null;
         latency: number;
         createdAt: number;
     }
@@ -73,12 +73,12 @@ export namespace Ping {
 
         let data: PingData = {
             status: 'offline',
-            protocol: 'java',
+            type: 'java',
             address: `${options.host}${options.port ? `:${options.port}` : ''}`,
             players: null,
             motd: null,
             version: null,
-            versionProtocol: null,
+            protocol: null,
             latency: Date.now() - pinged,
             createdAt: Date.now()
         };
@@ -87,7 +87,7 @@ export namespace Ping {
             return data;
         } else if (!('players' in response)) {
             data.version = response.version;
-            data.versionProtocol = response.protocol;
+            data.protocol = response.protocol;
             data.motd = response.motd;
             data.players = {
                 max: response.maxPlayers,
@@ -109,7 +109,7 @@ export namespace Ping {
             : response.description.text ?? null;
 
         data.version = response.version.name;
-        data.versionProtocol = response.version.protocol;
+        data.protocol = response.version.protocol;
         data.latency = response.latency;
         data.status = response.players.max ? 'online' : 'offline';
 
@@ -125,12 +125,12 @@ export namespace Ping {
 
         let data: PingData = {
             status: 'offline',
-            protocol: 'bedrock',
+            type: 'bedrock',
             address: `${options.host}:${options.port ?? 19132}`,
             players: null,
             motd: null,
             version: null,
-            versionProtocol: null,
+            protocol: null,
             latency: Date.now() - pinged,
             createdAt: Date.now()
         };
@@ -145,7 +145,7 @@ export namespace Ping {
 
         data.motd = response.motd || null;
         data.version = response.version;
-        data.versionProtocol = response.protocol;
+        data.protocol = response.protocol;
         data.status = response.playersMax ? 'online' : 'offline';
 
         return data;
