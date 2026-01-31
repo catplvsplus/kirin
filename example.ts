@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { styleText } from 'node:util';
-import { Server, ServerManager } from './dist/index.mjs
+import { Server, ServerManager } from './dist/index.mjs';
 
 const servers = new ServerManager('./servers');
 
