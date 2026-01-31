@@ -11,7 +11,8 @@
   },
   "scripts": {
     "build": "tsdown --config-loader unrun",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "prepare": "bun run build"
   },
   "dependencies": {
     "@discordjs/collection": "^2.1.1",
