@@ -76,6 +76,9 @@ export class Server extends EventEmitter<Server.Events> {
         this.type = data.type;
         this.address = data.address;
         this.pingInterval = data.pingInterval;
+
+
+        this.ping.start(this.pingInterval);
     }
 
     public async start(): Promise<void> {
