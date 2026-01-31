@@ -100,11 +100,10 @@ export class Server extends EventEmitter<Server.Events> {
 
         this.process.process?.on('spawn', () => {
             this.emit('processStart', this.process!);
-            this.ping.start(this.pingInterval ?? 60000);
+            this.ping.start(this.pingInterval);
         });
 
         const onStop = (reason?: Error) => {
-            this.ping.stop();
             this.process = null;
             this.stopping = false;
             this.emit('processStop', this.process!, reason);

@@ -23,13 +23,14 @@ export class Ping {
                 timeout: this.timeout
             });
 
+        this.latest = data;
         this.server.emit('pingUpdate', data);
 
         if (currentStatus !== data.status) {
             this.server.emit('statusUpdate', this.server.status);
         }
 
-        return this.latest = data;
+        return data;
     }
 
     public start(interval: number): void {

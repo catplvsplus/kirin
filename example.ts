@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { Server, ServerManager } from './dist/index.mjs';
+import { styleText } from 'node:util';
 
 const servers = new ServerManager('./servers');
 
@@ -29,7 +30,7 @@ if (servers.servers.size === 0) {
         name: 'server',
         address: 'localhost:25565',
         directory,
-        protocol: 'java',
+        type: 'java',
         persist: true,
         env: {},
         command: `java -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:G1HeapWastePercent=5 -XX:G1MaxNewSizePercent=40 -XX:G1MixedGCCountTarget=4 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1NewSizePercent=30 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:G1ReservePercent=20 -XX:InitiatingHeapOccupancyPercent=15 -XX:MaxGCPauseMillis=200 -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=32 -jar ${build.downloads['server:default'].name}`,
@@ -46,9 +47,10 @@ await server.start();
 
 server.on('processStdout', (data) => console.log(data));
 server.on('processStderr', (data) => console.error(data));
-server.on('processStart', () => console.log('Server started!'));
-server.on('processStop', (process, reason) => console.log('Server stopped!', reason));
-server.on('pingUpdate', (data) => console.log(`Server ping: ${data.latency}ms; Status: ${data.status}; ${data.players?.online || 0}/${data.players?.max || 0}`));
+server.on('processStart', () => console.log(styleText('green', 'Server started!')));
+server.on('processStop', (process, reason) => console.log(styleText('red', 'Server stopped!'), reason));
+server.on('pingUpdate', (data) => console.log(styleText('green', `Server ping: ${data.latency}ms; Status: ${data.status}; ${data.players?.online || 0}/${data.players?.max || 0}`)));
+server.on('statusUpdate', (status) => console.log(styleText('cyan', `Server status: ${status}`)));
 
 process.on('SIGINT', async () => {
     await server.stop();
