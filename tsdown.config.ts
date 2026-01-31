@@ -6,6 +6,7 @@ export default defineConfig({
     outDir: './dist',
     tsconfig: './tsconfig.json',
     skipNodeModulesBundle: true,
+    format: ['esm'],
     nodeProtocol: true,
     platform: 'node',
     dts: true,

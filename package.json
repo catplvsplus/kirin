@@ -1,8 +1,10 @@
 {
   "name": "@kirinmc/core",
+  "description": "A simple minecraft server manager library",
   "version": "0.0.1",
   "type": "module",
   "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -30,6 +32,11 @@
     "typescript": "^5.9.3"
   },
   "trustedDependencies": ["raknet-native"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   }

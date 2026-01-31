@@ -9,15 +9,35 @@ export class ServerManager extends EventEmitter<ServerManager.Events> {
     public downloads: DownloadManager;
     public servers: Collection<string, Server> = new Collection();
 
+    public root: string;
+
     get configPath() {
         return path.join(this.root, 'servers.json');
     }
 
-    constructor(public root: string) {
+    constructor(options: ServerManager.Options) {
         super();
 
-        this.root = root;
+        this.root = options.root;
         this.downloads = new DownloadManager(this);
+    }
+
+    public get(id: string): Server|null {
+        return this.servers.get(id) ?? null;
+    }
+
+    public async add(data: Server.Data): Promise<Server> {
+        if (this.servers.has(data.id)) {
+            throw new Error(`Server with ID ${data.id} already exists.`);
+        }
+
+        const server = new Server(data, this);
+
+        this.servers.set(data.id, server);
+        this.emit('serverCreate', server);
+
+        await this.save();
+        return server;
     }
 
     public async delete(id: string): Promise<Server|null> {
@@ -49,7 +69,6 @@ export class ServerManager extends EventEmitter<ServerManager.Events> {
 
         for (const rawData of servers) {
             const data = Server.schema.parse(rawData);
-
             const server = this.servers.get(data.id)?.edit(data) ?? new Server(data, this);
 
             this.servers.set(data.id, server);
@@ -78,5 +97,9 @@ export namespace ServerManager {
     export interface Events {
         serverCreate: [server: Server];
         serverDelete: [server: Server];
+    }
+
+    export interface Options {
+        root: string;
     }
 }
