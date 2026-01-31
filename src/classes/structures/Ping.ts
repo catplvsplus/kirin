@@ -10,6 +10,7 @@ export class Ping {
     constructor(public server: Server) {}
 
     public async ping(): Promise<Ping.PingData> {
+        const currentStatus = this.latest?.status;
         const data = this.server.type === 'java'
             ? await Ping.pingJava({
                 host: this.server.hostname,
@@ -23,6 +24,10 @@ export class Ping {
             });
 
         this.server.emit('pingUpdate', data);
+
+        if (currentStatus !== data.status) {
+            this.server.emit('statusUpdate', this.server.status);
+        }
 
         return this.latest = data;
     }

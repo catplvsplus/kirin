@@ -104,9 +104,11 @@ export class Server extends EventEmitter<Server.Events> {
         });
 
         const onStop = (reason?: Error) => {
-            this.emit('processStop', this.process!, reason);
             this.ping.stop();
             this.process = null;
+            this.stopping = false;
+            this.emit('processStop', this.process!, reason);
+            this.emit('statusUpdate', this.status);
         };
 
         this.process.then(() => onStop(), reason => onStop(reason));
@@ -120,16 +122,11 @@ export class Server extends EventEmitter<Server.Events> {
         const process = this.process;
 
         process?.kill();
+        this.emit('statusUpdate', this.status);
 
         return new Promise((resolve, reject) => this.process?.then(
-            () => {
-                this.stopping = false;
-                resolve(process?.exitCode ?? null);
-            },
-            (reason) => {
-                this.stopping = false;
-                reject(reason);
-            }
+            () => resolve(process?.exitCode ?? null),
+            reject
         ));
     }
 
@@ -164,6 +161,7 @@ export namespace Server {
         processStdout: [data: string];
         processStderr: [data: string];
         pingUpdate: [data: Ping.PingData];
+        statusUpdate: [status: Status];
     }
 
     export interface Data {
