@@ -6,6 +6,7 @@ import { config as dotenv } from '@dotenvx/dotenvx';
 import type Stream from 'node:stream';
 import { Ping } from './Ping.js';
 import z from 'zod';
+import path from 'node:path';
 
 export class Server extends EventEmitter<Server.Events> {
     public process: Result|null = null;
@@ -89,7 +90,7 @@ export class Server extends EventEmitter<Server.Events> {
 
         this.process = x(command, args, {
             nodeOptions: {
-                cwd: this.directory,
+                cwd: path.join(this.servers.root, this.directory),
                 env: {
                     ...process.env,
                     ...env
