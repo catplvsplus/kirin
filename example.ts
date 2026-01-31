@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { Server, ServerManager } from './packages/kirin/dist/index.mjs';
+import { Server, ServerManager } from './packages/core/dist/index.mjs';
 import { styleText } from 'node:util';
 
 const servers = new ServerManager('./servers');

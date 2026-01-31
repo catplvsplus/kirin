@@ -1,5 +1,5 @@
 {
-  "name": "kirin",
+  "name": "@kirinmc/core",
   "version": "0.0.1",
   "type": "module",
   "module": "./dist/index.mjs",
