@@ -1,3 +1,4 @@
+import { VelocityDownloader } from '../downloaders/VelocityDownloader.js';
 import { PaperDownloader } from '../downloaders/PaperDownloader.js';
 import { copyFile, mkdir, stat } from 'node:fs/promises';
 import type { ServerManager } from './ServerManager.js';
@@ -7,11 +8,13 @@ import path from 'node:path';
 
 export class DownloadManager {
     public paper: PaperDownloader = new PaperDownloader(this);
-    public cacheDir: string;
+    public velocity: VelocityDownloader = new VelocityDownloader(this);
 
-    constructor(public servers: ServerManager) {
-        this.cacheDir = path.join(servers.root, '.cache');
+    get cacheDir() {
+        return path.join(this.servers.root, '.cache');
     }
+
+    constructor(public servers: ServerManager) {}
 
     public async verify(file: string, checksum: Exclude<DownloadManager.DownloadOptions['checksum'], undefined>): Promise<boolean> {
         const hash = crypto.createHash(checksum.type);
