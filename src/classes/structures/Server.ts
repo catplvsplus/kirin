@@ -135,7 +135,7 @@ export namespace Server {
         processStop: [process: Result, reason?: Error];
         processStdout: [data: string];
         processStderr: [data: string];
-        serverPingUpdate: [data: Ping.PingData];
+        pingUpdate: [data: Ping.PingData];
     }
 
     export interface Data {

@@ -33,7 +33,7 @@ if (servers.servers.size === 0) {
         persist: true,
         env: {},
         command: `java -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+ParallelRefProcEnabled -XX:+PerfDisableSharedMem -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1HeapRegionSize=8M -XX:G1HeapWastePercent=5 -XX:G1MaxNewSizePercent=40 -XX:G1MixedGCCountTarget=4 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1NewSizePercent=30 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:G1ReservePercent=20 -XX:InitiatingHeapOccupancyPercent=15 -XX:MaxGCPauseMillis=200 -XX:MaxTenuringThreshold=1 -XX:SurvivorRatio=32 -jar ${build.downloads['server:default'].name}`,
-        pingInterval: 60000 * 2
+        pingInterval: 60000
     }, servers);
 
     servers.servers.set(server.id, server);
@@ -48,4 +48,8 @@ server.on('processStdout', (data) => console.log(data));
 server.on('processStderr', (data) => console.error(data));
 server.on('processStart', () => console.log('Server started!'));
 server.on('processStop', (process, reason) => console.log('Server stopped!', reason));
-server.on('serverPingUpdate', (data) => console.log(`Server ping: ${data.latency}ms; Status: ${data.status}; ${data.players?.online || 0}/${data.players?.max || 0}`));
+server.on('pingUpdate', (data) => console.log(`Server ping: ${data.latency}ms; Status: ${data.status}; ${data.players?.online || 0}/${data.players?.max || 0}`));
+
+process.on('SIGINT', async () => {
+    await server.stop();
+});

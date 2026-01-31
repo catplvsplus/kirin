@@ -29,6 +29,7 @@ export class Ping {
 
     public start(interval: number): void {
         this.stop();
+        this.ping();
         this.interval = setInterval(() => this.ping(), interval).unref();
     }
 
