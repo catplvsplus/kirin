@@ -1,4 +1,5 @@
 export * from './classes/downloaders/PaperDownloader.js';
+export * from './classes/downloaders/VelocityDownloader.js';
 
 export * from './classes/managers/DownloadManager.js';
 export * from './classes/managers/ServerManager.js';
