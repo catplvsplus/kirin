@@ -29,5 +29,8 @@
     "tsdown": "^0.20.1",
     "typescript": "^5.9.3"
   },
-  "trustedDependencies": ["raknet-native"]
+  "trustedDependencies": ["raknet-native"],
+  "publishConfig": {
+    "access": "public"
+  }
 }
