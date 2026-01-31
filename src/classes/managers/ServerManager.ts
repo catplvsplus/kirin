@@ -3,8 +3,9 @@ import { Server } from '../structures/Server.js';
 import { DownloadManager } from './DownloadManager.js';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import EventEmitter from 'node:events';
 
-export class ServerManager {
+export class ServerManager extends EventEmitter<ServerManager.Events> {
     public downloads: DownloadManager = new DownloadManager(this);
     public servers: Collection<string, Server> = new Collection();
 
@@ -13,7 +14,20 @@ export class ServerManager {
     }
 
     constructor(public root: string) {
+        super();
+
         this.root = root;
+    }
+
+    public async delete(id: string): Promise<Server|null> {
+        const server = this.servers.get(id);
+        if (!server) return null;
+
+        this.servers.delete(id);
+        this.emit('serverDelete', server);
+
+        await this.save();
+        return server;
     }
 
     public async load(): Promise<Collection<string, Server>> {
@@ -39,6 +53,8 @@ export class ServerManager {
 
             this.servers.set(data.id, server);
             result.set(data.id, server);
+
+            if (!this.servers.has(data.id)) this.emit('serverCreate', server);
         }
 
         return result;
@@ -57,4 +73,9 @@ export class ServerManager {
     }
 }
 
-export namespace ServerManager {}
+export namespace ServerManager {
+    export interface Events {
+        serverCreate: [server: Server];
+        serverDelete: [server: Server];
+    }
+}
