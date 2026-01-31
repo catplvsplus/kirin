@@ -3,9 +3,12 @@ import EventEmitter from 'node:events';
 import { x, type Result } from 'tinyexec';
 import type { ServerManager } from '../managers/ServerManager.js';
 import { config as dotenv } from '@dotenvx/dotenvx';
+import type Stream from 'node:stream';
+import { Ping } from './Ping.js';
 
 export class Server extends EventEmitter<Server.Events> {
     public process: Result|null = null;
+    public ping: Ping = new Ping(this);
 
     public id: string;
     public name: string;
@@ -15,6 +18,7 @@ export class Server extends EventEmitter<Server.Events> {
     public env: Record<string, string>|string;
     public protocol: Server.Protocol;
     public address: string;
+    public pingInterval: number;
 
     get isRunning(): boolean {
         return this.process !== null && !this.process.killed;
@@ -29,6 +33,18 @@ export class Server extends EventEmitter<Server.Events> {
         return !isNaN(port) ? port : null;
     }
 
+    get stdout(): Stream.Readable|null {
+        return this.process?.process?.stdout ?? null;
+    }
+
+    get stderr(): Stream.Readable|null {
+        return this.process?.process?.stderr ?? null;
+    }
+
+    get stdin(): Stream.Writable|null {
+        return this.process?.process?.stdin ?? null;
+    }
+
     constructor(data: Server.Data, public servers: ServerManager) {
         super();
 
@@ -41,6 +57,7 @@ export class Server extends EventEmitter<Server.Events> {
 
         this.protocol = data.protocol;
         this.address = data.address;
+        this.pingInterval = data.pingInterval;
     }
 
     public async start(): Promise<void> {
@@ -65,10 +82,12 @@ export class Server extends EventEmitter<Server.Events> {
 
         this.process.process?.on('spawn', () => {
             this.emit('processStart', this.process!);
+            this.ping.start(this.pingInterval);
         });
 
         const onStop = (reason?: Error) => {
             this.emit('processStop', this.process!, reason);
+            this.ping.stop();
             this.process = null;
         };
 
@@ -104,7 +123,8 @@ export class Server extends EventEmitter<Server.Events> {
             persist: this.persist,
             protocol: this.protocol,
             env: this.env,
-            address: this.address
+            address: this.address,
+            pingInterval: this.pingInterval
         };
     }
 }
@@ -115,6 +135,7 @@ export namespace Server {
         processStop: [process: Result, reason?: Error];
         processStdout: [data: string];
         processStderr: [data: string];
+        serverPingUpdate: [data: Ping.PingData];
     }
 
     export interface Data {
@@ -126,6 +147,7 @@ export namespace Server {
         env: Record<string, string>|string;
         protocol: Server.Protocol;
         address: string;
+        pingInterval: number;
     }
 
     export type Protocol = 'java'|'bedrock';
