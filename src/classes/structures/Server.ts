@@ -75,16 +75,17 @@ export class Server extends EventEmitter<Server.Events> {
         this.process.then(() => onStop(), reason => onStop(reason));
     }
 
-    public async stop(): Promise<void> {
-        if (!this.isRunning) return;
+    public async stop(): Promise<number|null> {
+        if (!this.isRunning) return null;
 
-        this.process?.kill();
+        const process = this.process;
 
-        const data = await this.process;
+        process?.kill();
 
-        if (data?.exitCode) {
-            throw new Error(`Server exited with code ${data.exitCode}`);
-        }
+        return new Promise((resolve, reject) => this.process?.then(
+            () => resolve(process?.exitCode ?? null),
+            reject
+        ));
     }
 
     public edit(data: Partial<Server.Data>): this {
