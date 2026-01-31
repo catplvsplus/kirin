@@ -1,6 +1,6 @@
 import { tokenizeArgs } from 'args-tokenizer';
 import EventEmitter from 'node:events';
-import { x, type Result } from 'tinyexec';
+import { x, type Output, type Result } from 'tinyexec';
 import type { ServerManager } from '../managers/ServerManager.js';
 import { config as dotenv } from '@dotenvx/dotenvx';
 import type Stream from 'node:stream';
@@ -107,7 +107,7 @@ export class Server extends EventEmitter<Server.Events> {
             this.ping.start(this.pingInterval);
         });
 
-        const onStop = (reason?: Error) => {
+        const onStop = (reason: Output|Error) => {
             this.process = null;
             this.stopping = false;
             this.ping.latest = Ping.createOfflineData(
@@ -122,7 +122,10 @@ export class Server extends EventEmitter<Server.Events> {
             this.emit('statusUpdate', this.status);
         };
 
-        this.process.then(() => onStop(), reason => onStop(reason));
+        this.process.then(
+            output => onStop(output),
+            error => onStop(error instanceof Error ? error : new Error(String(error)))
+        );
     }
 
     public async stop(): Promise<number|null> {
@@ -168,7 +171,7 @@ export namespace Server {
 
     export interface Events {
         processStart: [process: Result];
-        processStop: [process: Result, reason?: Error];
+        processStop: [process: Result, reason?: Output|Error];
         processStdout: [data: string];
         processStderr: [data: string];
         pingUpdate: [data: Ping.PingData];
