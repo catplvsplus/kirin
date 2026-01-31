@@ -32,7 +32,9 @@ export class ServerManager {
             .then(JSON.parse)
             .catch(() => []);
 
-        for (const data of servers) {
+        for (const rawData of servers) {
+            const data = Server.schema.parse(rawData);
+
             const server = this.servers.get(data.id)?.edit(data) ?? new Server(data, this);
 
             this.servers.set(data.id, server);

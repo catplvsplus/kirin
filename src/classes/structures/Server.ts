@@ -5,6 +5,7 @@ import type { ServerManager } from '../managers/ServerManager.js';
 import { config as dotenv } from '@dotenvx/dotenvx';
 import type Stream from 'node:stream';
 import { Ping } from './Ping.js';
+import z from 'zod';
 
 export class Server extends EventEmitter<Server.Events> {
     public process: Result|null = null;
@@ -178,4 +179,22 @@ export namespace Server {
     }
 
     export type Type = 'java'|'bedrock';
+
+    export const schema = z.object({
+        id: z.string(),
+        name: z.string(),
+        directory: z.string(),
+        command: z.string(),
+        persist: z.boolean(),
+        env: z.union([
+            z.record(z.string(), z.string()),
+            z.string(),
+        ]),
+        type: z.union([
+            z.literal('java'),
+            z.literal('bedrock')
+        ]),
+        address: z.string(),
+        pingInterval: z.number()
+    })
 }
