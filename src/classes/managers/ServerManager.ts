@@ -16,15 +16,8 @@ export class ServerManager {
         this.root = root;
     }
 
-    public async load(): Promise<void> {
-        const servers = await this.readConfig();
-
-        for (const server of servers) {
-            this.servers.set(server.id, new Server(server, this));
-        }
-    }
-
-    public async readConfig(): Promise<Server.Data[]> {
+    public async load(): Promise<Collection<string, Server>> {
+        const result = new Collection<string, Server>();
         const exists = await stat(this.root)
             .then(d => d.isDirectory())
             .catch(() => false);
@@ -32,16 +25,33 @@ export class ServerManager {
         if (!exists) {
             await mkdir(this.root, { recursive: true });
             await writeFile(this.configPath, '[]');
-            return [];
+            return result;
         }
 
-        return readFile(this.configPath, 'utf-8')
+        const servers: Server.Data[] = await readFile(this.configPath, 'utf-8')
             .then(JSON.parse)
             .catch(() => []);
+
+        for (const data of servers) {
+            const server = this.servers.get(data.id)?.edit(data) ?? new Server(data, this);
+
+            this.servers.set(data.id, server);
+            result.set(data.id, server);
+        }
+
+        return result;
     }
 
-    public async writeConfig(servers: Server.Data[]): Promise<void> {
-        await writeFile(this.configPath, JSON.stringify(servers));
+    public async save(): Promise<void> {
+        await mkdir(path.dirname(this.configPath), { recursive: true });
+        await writeFile(
+            this.configPath,
+            JSON.stringify(
+                this.servers.values().map(v => v.toJSON()).toArray(),
+                null,
+                2
+            )
+        );
     }
 }
 

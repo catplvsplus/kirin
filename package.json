@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@discordjs/collection": "^2.1.1",
+    "@dotenvx/dotenvx": "^1.52.0",
     "args-tokenizer": "^0.3.0",
     "bedrock-protocol": "^3.52.0",
     "minecraft-protocol": "^1.63.0",
