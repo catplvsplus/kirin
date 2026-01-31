@@ -62,7 +62,7 @@ export namespace PaperDownloader {
         }[];
         downloads: Record<'server:default', {
             name: string;
-            checksum: Record<'sha256', string>;
+            checksums: Record<'sha256', string>;
             size: number;
             url: string;
         }>;

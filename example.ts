@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { Server, ServerManager } from './dist/index.mjs';
+import { Server, ServerManager } from './packages/kirin/dist/index.mjs';
 import { styleText } from 'node:util';
 
 const servers = new ServerManager('./servers');
@@ -10,7 +10,7 @@ if (servers.servers.size === 0) {
     console.log('No servers found, creating one...');
 
     const versions = await servers.downloads.paper.fetchVersions();
-    const builds = await servers.downloads.paper.fetchBuilds(servers.downloads.paper.versions.first()![0]);
+    const builds = await servers.downloads.paper.fetchBuilds(versions.first()![0]);
 
     const build = builds[0];
 
@@ -22,14 +22,20 @@ if (servers.servers.size === 0) {
 
     await servers.downloads.download(
         build.downloads['server:default'].url,
-        path.join(directory, build.downloads['server:default'].name)
+        path.join(directory, build.downloads['server:default'].name),
+        {
+            checksum: {
+                type: 'sha256',
+                hash: build.downloads['server:default'].checksums.sha256
+            }
+        }
     );
 
     const server = new Server({
         id: `my-server`,
         name: 'server',
         address: 'localhost:25565',
-        directory,
+        directory: 'server',
         type: 'java',
         persist: true,
         env: {},

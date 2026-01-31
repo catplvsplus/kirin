@@ -6,7 +6,7 @@ import path from 'node:path';
 import EventEmitter from 'node:events';
 
 export class ServerManager extends EventEmitter<ServerManager.Events> {
-    public downloads: DownloadManager = new DownloadManager(this);
+    public downloads: DownloadManager;
     public servers: Collection<string, Server> = new Collection();
 
     get configPath() {
@@ -17,6 +17,7 @@ export class ServerManager extends EventEmitter<ServerManager.Events> {
         super();
 
         this.root = root;
+        this.downloads = new DownloadManager(this);
     }
 
     public async delete(id: string): Promise<Server|null> {
