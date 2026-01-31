@@ -132,8 +132,8 @@ export class Server extends EventEmitter<Server.Events> {
 
         const process = this.process;
 
-        process?.kill();
         this.emit('statusUpdate', this.status);
+        process?.kill();
 
         return new Promise((resolve, reject) => this.process?.then(
             () => resolve(process?.exitCode ?? null),

@@ -25,13 +25,9 @@ export class DownloadManager {
         return hash.digest('hex') === checksum.hash;
     }
 
-    public async getCachePath(url: string): Promise<string|null> {
+    public async getCachePath(url: string): Promise<string> {
         const hash = crypto.createHash('sha256').update(url).digest('hex');
         const location = path.join(this.cacheDir, hash);
-
-        const exists = await stat(location).then(d => d.isFile()).catch(() => false);
-        if (!exists) return null;
-
         return location;
     }
 
@@ -56,24 +52,25 @@ export class DownloadManager {
         const destination = path.join(directory, filename);
         const cachePath = await this.getCachePath(url);
 
-        if (cachePath && options?.useCache !== false) {
+        if (options?.useCache !== false) {
+            const isCacheExists = await stat(cachePath).then(d => d.isFile()).catch(() => false);
+
+            if (!isCacheExists) {
+                const response = await fetch(url);
+                if (!response.ok) throw Error('Failed to download file', { cause: response });
+                if (!response.body) throw Error('No response body');
+
+                await mkdir(path.dirname(cachePath), { recursive: true });
+                await this.writeToFile(response.body, cachePath);
+            }
+
             await copyFile(cachePath, destination);
         } else {
             const response = await fetch(url);
             if (!response.ok) throw Error('Failed to download file', { cause: response });
+            if (!response.body) throw Error('No response body');
 
-            const writeStream = createWriteStream(destination);
-
-            for await (const chunk of response.body!) {
-                writeStream.write(chunk);
-            }
-
-            writeStream.end();
-
-            await new Promise<void>((resolve, reject) => {
-                writeStream.on('finish', resolve);
-                writeStream.on('error', reject);
-            });
+            await this.writeToFile(response.body, destination);
         }
 
         if (options?.checksum) {
@@ -81,6 +78,21 @@ export class DownloadManager {
                 throw new Error('Checksum mismatch');
             }
         }
+    }
+
+    public async writeToFile(stream: ReadableStream<Uint8Array<ArrayBuffer>>, location: string): Promise<void> {
+        const writeStream = createWriteStream(location);
+
+        for await (const chunk of stream) {
+            writeStream.write(chunk);
+        }
+
+        writeStream.end();
+
+        await new Promise<void>((resolve, reject) => {
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
+        });
     }
 }
 
