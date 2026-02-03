@@ -71,10 +71,10 @@ export class ServerManager extends EventEmitter<ServerManager.Events> {
             const data = Server.schema.parse(rawData);
             const server = this.servers.get(data.id)?.edit(data) ?? new Server(data, this);
 
+            if (!this.servers.has(data.id)) this.emit('serverCreate', server);
+
             this.servers.set(data.id, server);
             result.set(data.id, server);
-
-            if (!this.servers.has(data.id)) this.emit('serverCreate', server);
         }
 
         return result;
