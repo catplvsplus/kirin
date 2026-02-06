@@ -110,8 +110,9 @@ export class Server extends EventEmitter<Server.Events> {
         this.process.process?.stderr?.on('data', (data) => this.emit('processStderr', data.toString().trimEnd()));
 
         this.process.process?.on('spawn', () => {
-            this.emit('processStart', this.process!);
             this.ping.start(this.pingInterval);
+            this.emit('processStart', this.process!);
+            this.emit('statusUpdate', this.status);
             resolveStart();
         });
 
