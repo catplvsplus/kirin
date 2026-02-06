@@ -85,8 +85,15 @@ export class Server extends EventEmitter<Server.Events> {
     public async start(): Promise<void> {
         if (this.isRunning) throw new Error(`Server is already running.`);
 
+        let resolveStart: () => void;
+        let rejectStart: (reason?: any) => void;
+
         const [command, ...args] = tokenizeArgs(this.command);
         const env = typeof this.env === 'string' ? dotenv({ path: this.env, processEnv: {} }).parsed : this.env;
+        const startedPromise = new Promise<void>((resolve, reject) => {
+            resolveStart = resolve;
+            rejectStart = reject;
+        });
 
         this.process = x(command, args, {
             nodeOptions: {
@@ -105,6 +112,7 @@ export class Server extends EventEmitter<Server.Events> {
         this.process.process?.on('spawn', () => {
             this.emit('processStart', this.process!);
             this.ping.start(this.pingInterval);
+            resolveStart();
         });
 
         const onStop = (reason: Output|Error) => {
@@ -123,8 +131,16 @@ export class Server extends EventEmitter<Server.Events> {
         };
 
         this.process.then(
-            output => onStop(output),
-            error => onStop(error instanceof Error ? error : new Error(String(error)))
+            output => {
+                onStop(output);
+                rejectStart(new Error('Process exited unexpectedly.'));
+            },
+            error => {
+                error = error instanceof Error ? error : new Error(String(error));
+
+                onStop(error);
+                rejectStart(error);
+            }
         );
     }
 
