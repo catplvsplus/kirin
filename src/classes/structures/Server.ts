@@ -143,6 +143,8 @@ export class Server extends EventEmitter<Server.Events> {
                 rejectStart(error);
             }
         );
+
+        return startedPromise;
     }
 
     public async stop(): Promise<number|null> {
