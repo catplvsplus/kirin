@@ -2,6 +2,10 @@
 
 A simple minecraft server manager library for [node.js](https://nodejs.org/).
 
+## Examples
+
+- [Kirin Bot](https://github.com/catplvsplus/kirin-bot) A Minecraft server manager in Discord.
+
 ## Installation
 
 ```bash
