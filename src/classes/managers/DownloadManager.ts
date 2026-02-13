@@ -1,6 +1,6 @@
 import { VelocityDownloader } from '../downloaders/VelocityDownloader.js';
 import { PaperDownloader } from '../downloaders/PaperDownloader.js';
-import { copyFile, mkdir, stat } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, stat } from 'node:fs/promises';
 import type { ServerManager } from './ServerManager.js';
 import { createReadStream, createWriteStream } from 'node:fs';
 import crypto from 'node:crypto';
@@ -29,55 +29,66 @@ export class DownloadManager {
     }
 
     public async getCachePath(url: string): Promise<string> {
-        const hash = crypto.createHash('sha256').update(url).digest('hex');
-        const location = path.join(this.cacheDir, hash);
-        return location;
+        const location = path.join(this.cacheDir, await this.getURLHash(url));
+
+        const exists = await stat(location).then(d => d.isDirectory()).catch(() => false);
+        if (!exists) throw new Error(`Cache not found: ${location}`);
+
+        const file = await readdir(location);
+        if (!file.length) throw new Error('Cache is empty');
+
+        return path.join(location, file[0]);
     }
 
-    public async download(url: string, location: string, options?: DownloadManager.DownloadOptions): Promise<void> {
-        let stats = await stat(location).catch(() => null);
+    public async getURLHash(url: string): Promise<string> {
+        return crypto.createHash('sha256').update(url).digest('hex');
+    }
 
-        const directory = stats?.isDirectory()
-            ? location
-            : path.dirname(location);
-        const filename = stats?.isFile()
-            ? path.basename(location)
-            : path.basename(new URL(url).pathname);
+    public async download(url: string, options: DownloadManager.DownloadOptions): Promise<void> {
+        let { directory, filename } = options;
 
-        if (!stats) {
-            await mkdir(directory, { recursive: true });
-        } else {
-            if (!options?.throwIfExists) return;
+        const stats = await stat(directory).catch(() => null);
+        if (!stats) await mkdir(directory, { recursive: true });
 
-            throw new Error(`File already exists at ${location}`)
+        const cachePath = options?.useCache === false ? null : await this.getCachePath(url).catch(() => null);
+        const checkIfExists = async () => {
+            if (options.throwIfExists !== false) {
+                const exists = await stat(path.join(directory, filename!)).then(d => d.isFile()).catch(() => false);
+                if (exists) throw new Error('File already exists');
+            }
         }
 
-        const destination = path.join(directory, filename);
-        const cachePath = await this.getCachePath(url);
+        if (cachePath) {
+            filename ??= path.basename(cachePath);
 
-        if (options?.useCache !== false) {
-            const isCacheExists = await stat(cachePath).then(d => d.isFile()).catch(() => false);
-
-            if (!isCacheExists) {
-                const response = await fetch(url);
-                if (!response.ok) throw Error('Failed to download file', { cause: response });
-                if (!response.body) throw Error('No response body');
-
-                await mkdir(path.dirname(cachePath), { recursive: true });
-                await this.writeToFile(response.body, cachePath);
-            }
-
-            await copyFile(cachePath, destination);
+            await checkIfExists();
+            await copyFile(cachePath, path.join(directory, filename));
         } else {
             const response = await fetch(url);
+            const disposition = response.headers.get('content-disposition');
+
             if (!response.ok) throw Error('Failed to download file', { cause: response });
             if (!response.body) throw Error('No response body');
 
-            await this.writeToFile(response.body, destination);
+            const name = (disposition?.match(/filename="(.+)"/)?.[1] ?? path.basename(url)) || `file-${Date.now()}`;
+
+            filename ??= name;
+
+            await checkIfExists();
+
+            if (options.useCache !== false) {
+                const location = path.join(this.cacheDir, await this.getURLHash(url));
+
+                await mkdir(location, { recursive: true });
+                await this.writeToFile(response.body, path.join(location, name));
+                await copyFile(path.join(location, name), path.join(directory, filename));
+            } else {
+                await this.writeToFile(response.body, path.join(directory, filename));
+            }
         }
 
         if (options?.checksum) {
-            if (!await this.verify(destination, options.checksum)) {
+            if (!await this.verify(path.join(directory, filename), options.checksum)) {
                 throw new Error('Checksum mismatch');
             }
         }
@@ -92,20 +103,42 @@ export class DownloadManager {
 
         writeStream.end();
 
-        await new Promise<void>((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
+        let resolve: (() => void)|null = null;
+        let reject: ((reason?: any) => void)|null = null;
+
+        const promise =  new Promise<void>((res, rej) => {
+            resolve = res;
+            reject = rej;
         });
+
+        const resolveWrapper = () => {
+            resolve?.();
+            writeStream.off('finish', resolveWrapper);
+            writeStream.off('error', rejectWrapper);
+        };
+
+        const rejectWrapper = (reason?: any) => {
+            reject?.(reason);
+            writeStream.off('finish', resolveWrapper);
+            writeStream.off('error', rejectWrapper);
+        };
+
+        writeStream.on('finish', resolveWrapper);
+        writeStream.on('error', rejectWrapper);
+
+        await promise;
     }
 }
 
 export namespace DownloadManager {
     export interface DownloadOptions {
+        directory: string;
+        filename?: string;
         throwIfExists?: boolean;
         useCache?: boolean;
         checksum?: {
             type: string;
             hash: string;
-        }
+        };
     }
 }

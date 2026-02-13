@@ -44,7 +44,7 @@ export class PaperDownloader {
         return build;
     }
 
-    public async downloadLatest(location: string, options?: Omit<DownloadManager.DownloadOptions, 'checksum'>): Promise<void> {
+    public async downloadLatest(options: Omit<DownloadManager.DownloadOptions, 'checksum'>): Promise<void> {
         const build = await this.fetchLatestBuild();
         if (!build) throw new Error('No builds found');
 
@@ -56,7 +56,6 @@ export class PaperDownloader {
 
         await this.downloads.download(
             url,
-            location,
             {
                 checksum,
                 ...options
