@@ -44,7 +44,7 @@ export class DownloadManager {
         return crypto.createHash('sha256').update(url).digest('hex');
     }
 
-    public async download(url: string, options: DownloadManager.DownloadOptions): Promise<void> {
+    public async download(url: string, options: DownloadManager.DownloadOptions): Promise<string> {
         let { directory, filename } = options;
 
         const stats = await stat(directory).catch(() => null);
@@ -70,7 +70,7 @@ export class DownloadManager {
             if (!response.ok) throw Error('Failed to download file', { cause: response });
             if (!response.body) throw Error('No response body');
 
-            const name = (disposition?.match(/filename="(.+)"/)?.[1] ?? path.basename(url)) || `file-${Date.now()}`;
+            const name = (disposition?.match(/filename="(.+)"/)?.[1] ?? path.basename(new URL(url).pathname)) || `file-${Date.now()}`;
 
             filename ??= name;
 
@@ -92,6 +92,8 @@ export class DownloadManager {
                 throw new Error('Checksum mismatch');
             }
         }
+
+        return path.join(directory, filename);
     }
 
     public async writeToFile(stream: ReadableStream<Uint8Array<ArrayBuffer>>, location: string): Promise<void> {
