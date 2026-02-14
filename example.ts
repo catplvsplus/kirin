@@ -21,6 +21,14 @@ await servers.downloads.download(
     {
         directory,
         filename: 'server.jar',
+        onProgress: (progress) => {
+            if (progress.size) {
+                const percentage = (progress.progress / progress.size) * 100;
+                console.log(`Downloaded ${percentage.toFixed(2)}%`);
+            } else {
+                console.log(`Downloaded ${progress.progress} bytes`);
+            }
+        },
         checksum: {
             type: 'sha256',
             hash: build.downloads['server:default'].checksums.sha256

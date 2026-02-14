@@ -71,19 +71,29 @@ export class DownloadManager {
             if (!response.body) throw Error('No response body');
 
             const name = (disposition?.match(/filename="(.+)"/)?.[1] ?? path.basename(new URL(url).pathname)) || `file-${Date.now()}`;
+            const size = response.headers.get('content-length') ? Number(response.headers.get('content-length')) : null;
 
             filename ??= name;
 
             await checkIfExists();
 
+            let progress = 0;
+
+            const onChunk = (chunk: Uint8Array<ArrayBuffer>) => {
+                options.onProgress?.({
+                    size,
+                    progress: progress += chunk.length
+                });
+            };
+
             if (options.useCache !== false) {
                 const location = path.join(this.cacheDir, await this.getURLHash(url));
 
                 await mkdir(location, { recursive: true });
-                await this.writeToFile(response.body, path.join(location, name));
+                await this.writeToFile(response.body, path.join(location, name), onChunk);
                 await copyFile(path.join(location, name), path.join(directory, filename));
             } else {
-                await this.writeToFile(response.body, path.join(directory, filename));
+                await this.writeToFile(response.body, path.join(directory, filename), onChunk);
             }
         }
 
@@ -96,11 +106,12 @@ export class DownloadManager {
         return path.join(directory, filename);
     }
 
-    public async writeToFile(stream: ReadableStream<Uint8Array<ArrayBuffer>>, location: string): Promise<void> {
+    public async writeToFile(stream: ReadableStream<Uint8Array<ArrayBuffer>>, location: string, onChunk?: (chunk: Uint8Array<ArrayBuffer>) => void): Promise<void> {
         const writeStream = createWriteStream(location);
 
         for await (const chunk of stream) {
             writeStream.write(chunk);
+            onChunk?.(chunk);
         }
 
         writeStream.end();
@@ -138,9 +149,15 @@ export namespace DownloadManager {
         filename?: string;
         throwIfExists?: boolean;
         useCache?: boolean;
+        onProgress?: (progress: ProgressData) => void;
         checksum?: {
             type: string;
             hash: string;
         };
+    }
+
+    export interface ProgressData {
+        progress: number;
+        size: number|null;
     }
 }
