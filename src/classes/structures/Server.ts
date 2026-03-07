@@ -147,6 +147,16 @@ export class Server extends EventEmitter<Server.Events> {
         return startedPromise;
     }
 
+    public async send(data: string): Promise<void> {
+        if (!this.isRunning) throw new Error(`Server is not running.`);
+
+        await new Promise((res, rej) => this.stdin?.write(
+            data.trimEnd() + '\n',
+            'utf-8',
+            err => err ? rej(err) : res(void 0)
+        ));
+    }
+
     public async stop(): Promise<number|null> {
         if (!this.isRunning) return null;
 
